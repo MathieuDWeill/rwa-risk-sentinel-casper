@@ -44,27 +44,45 @@ async function clickByText(page, text) {
   await page.screenshot({ path: path.join(ARTIFACTS, '02-file-uploaded.png'), fullPage: true });
 
   console.log('[demo] clicking ASSESS RWA DOCUMENT');
-  await page.getByRole('button', { name: /ASSESS RWA DOCUMENT/i }).click({ timeout: 30000 });
+  const assessButton = page.getByRole('button', { name: /ASSESS RWA DOCUMENT/i });
+  await assessButton.scrollIntoViewIfNeeded({ timeout: 30000 });
+  await assessButton.click({ timeout: 30000, force: true });
   console.log('[demo] clicked ASSESS RWA DOCUMENT');
 
-  console.log('[demo] waiting for document hash / risk output');
-  await Promise.race([
-    waitForText(page, 'Document SHA-256', 180000),
-    waitForText(page, 'file_sha256', 180000),
-    waitForText(page, 'Risk score', 180000),
-    waitForText(page, 'Evidence hash', 180000),
-    waitForText(page, 'Risk band', 180000),
-  ]);
+  // Streamlit reruns after click. Give it time to start and finish.
+  await page.waitForTimeout(3000);
+
+  console.log('[demo] waiting for upload assessment output');
+
+  try {
+    await Promise.race([
+      waitForText(page, 'ON-CHAIN PROOF REGISTERED', 300000),
+      waitForText(page, 'Transaction Hash', 300000),
+      waitForText(page, 'SHA-256 Document Hash', 300000),
+      waitForText(page, 'Document Risk Profiling', 300000),
+      waitForText(page, 'Casper Attestation Status', 300000),
+      waitForText(page, 'Traceback', 300000),
+      waitForText(page, 'Exception', 300000),
+      waitForText(page, 'Error', 300000),
+    ]);
+  } catch (err) {
+    const bodyText = await page.locator('body').innerText();
+    fs.writeFileSync(path.join(ARTIFACTS, 'debug-body-timeout.txt'), bodyText);
+    await page.screenshot({ path: path.join(ARTIFACTS, 'debug-timeout.png'), fullPage: true });
+    throw err;
+  }
 
   await page.screenshot({ path: path.join(ARTIFACTS, '03-risk-result.png'), fullPage: true });
 
-  console.log('[demo] waiting for Casper result');
-  await Promise.race([
-    waitForText(page, 'Real Casper', 240000),
-    waitForText(page, 'submitted', 240000),
-    waitForText(page, 'Transaction hash', 240000),
-    waitForText(page, 'Explorer', 240000),
-  ]);
+  console.log('[demo] waiting specifically for Casper transaction hash');
+  try {
+    await waitForText(page, 'Transaction Hash', 300000);
+  } catch (err) {
+    const bodyText = await page.locator('body').innerText();
+    fs.writeFileSync(path.join(ARTIFACTS, 'debug-no-transaction.txt'), bodyText);
+    await page.screenshot({ path: path.join(ARTIFACTS, '04-no-transaction.png'), fullPage: true });
+    throw err;
+  }
 
   await page.screenshot({ path: path.join(ARTIFACTS, '04-casper-result.png'), fullPage: true });
 
@@ -107,15 +125,17 @@ async function clickByText(page, text) {
     summary.detected_explorer_url ||
     (summary.detected_tx_hash ? `https://testnet.cspr.live/deploy/${summary.detected_tx_hash}` : null);
 
-  if (explorerUrl) {
-    console.log(`[demo] opening explorer ${explorerUrl}`);
-    const explorer = await context.newPage();
-    await explorer.goto(explorerUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
-    await explorer.waitForTimeout(8000);
-    await explorer.screenshot({ path: path.join(ARTIFACTS, '05-explorer.png'), fullPage: true });
-  } else {
-    console.warn('[demo] no explorer URL detected in page text');
+  if (!explorerUrl) {
+    const bodyText = await page.locator('body').innerText();
+    fs.writeFileSync(path.join(ARTIFACTS, 'debug-no-explorer-url.txt'), bodyText);
+    throw new Error('No explorer URL or transaction hash detected; refusing to open explorer.');
   }
+
+  console.log(`[demo] opening explorer ${explorerUrl}`);
+  const explorer = await context.newPage();
+  await explorer.goto(explorerUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await explorer.waitForTimeout(12000);
+  await explorer.screenshot({ path: path.join(ARTIFACTS, '05-explorer.png'), fullPage: true });
 
   await page.waitForTimeout(3000);
   await context.close();
