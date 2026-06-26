@@ -78,6 +78,15 @@ section[data-testid="stSidebar"] * {
   text-transform: uppercase;
 }
 
+.lab-author {
+  margin-top: 18px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #111318;
+}
+
 .hero-grid {
   position: absolute;
   right: 28px;
@@ -265,6 +274,7 @@ with st.sidebar:
 </div>
 <div class="sidebar-title">RWA INTELLIGENCE LAB</div>
 <div class="sidebar-sub">AGENTIC RISK INFRASTRUCTURE</div>
+<div class="sidebar-sub">MATHIEU D. WEILL</div>
 """,
         unsafe_allow_html=True,
     )
@@ -288,6 +298,7 @@ st.markdown(
   <div class="lab-kicker">MODERNIST</div>
   <div class="lab-title">RWA Intelligence Lab</div>
   <div class="lab-subtitle">Survival > Prediction. Evidence before trust.</div>
+  <div class="lab-author">Built by Mathieu D. WEILL</div>
   <div class="hero-grid">
     <div class="hero-cell blue"></div>
     <div class="hero-cell"></div>
