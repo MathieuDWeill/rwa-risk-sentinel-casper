@@ -272,6 +272,30 @@ div[data-testid="stMetric"] {
   margin-bottom: 30px;
 }
 
+.sidebar-proof-label {
+  color: #cfc8ba !important;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.sidebar-proof-value {
+  display: block;
+  background: #242730 !important;
+  color: #f4f1e8 !important;
+  border: 1px solid #3a3d45;
+  padding: 8px 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .side-link {
   display: block;
   background: #f4f1e8 !important;
@@ -283,7 +307,7 @@ div[data-testid="stMetric"] {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 0.75rem;
-  margin-top: 10px;
+  margin-top: 14px;
 }
 </style>
 """,
@@ -308,11 +332,12 @@ with st.sidebar:
     st.markdown('<span class="badge badge-green">Decision system online</span>', unsafe_allow_html=True)
 
     st.markdown("### CASPER TESTNET")
-    st.caption("Contract hash")
-    st.code("hash-725268e37535a1bca175840693f9b59ea7dd2accbcbd104577145f82576609d5", language="text")
-
     st.markdown(
-        '<a class="side-link" href="https://testnet.cspr.live/deploy/7f6848d02c5bf1f14618c389c3340efc4026f8328f2b35a875a3eb9f33df7851" target="_blank">Latest attestation</a>',
+        '<div class="sidebar-proof-label">CONTRACT</div>'
+        '<div class="sidebar-proof-value">725268e3…676609d5</div>'
+        '<div class="sidebar-proof-label">LATEST TX</div>'
+        '<div class="sidebar-proof-value">7f6848d0…33df7851</div>'
+        '<a class="side-link" href="https://testnet.cspr.live/deploy/7f6848d02c5bf1f14618c389c3340efc4026f8328f2b35a875a3eb9f33df7851" target="_blank">Open explorer</a>',
         unsafe_allow_html=True,
     )
 
