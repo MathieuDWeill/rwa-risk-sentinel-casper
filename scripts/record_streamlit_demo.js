@@ -43,41 +43,17 @@ async function clickByText(page, text) {
 
   await page.screenshot({ path: path.join(ARTIFACTS, '02-file-uploaded.png'), fullPage: true });
 
-  console.log('[demo] clicking upload/analyze button');
-  const uploadButtons = [
-    'Upload & Analyze',
-    'Analyze uploaded document',
-    'Analyze document',
-    'Assess uploaded document',
-    'Run upload assessment',
-    'Publish uploaded document',
-    'Run agent + publish',
-  ];
-
-  let clicked = false;
-  for (const label of uploadButtons) {
-    const btn = page.getByText(label, { exact: false }).first();
-    if (await btn.count().catch(() => 0)) {
-      try {
-        await btn.click({ timeout: 3000 });
-        clicked = true;
-        console.log(`[demo] clicked button: ${label}`);
-        break;
-      } catch (_) {}
-    }
-  }
-
-  if (!clicked) {
-    const buttons = await page.locator('button').allTextContents();
-    console.log('[demo] visible buttons:', buttons);
-    throw new Error('Could not find upload/analyze button. Update scripts/record_streamlit_demo.js with the exact button label.');
-  }
+  console.log('[demo] clicking ASSESS RWA DOCUMENT');
+  await page.getByRole('button', { name: /ASSESS RWA DOCUMENT/i }).click({ timeout: 30000 });
+  console.log('[demo] clicked ASSESS RWA DOCUMENT');
 
   console.log('[demo] waiting for document hash / risk output');
   await Promise.race([
-    waitForText(page, 'sha256:', 180000),
+    waitForText(page, 'Document SHA-256', 180000),
+    waitForText(page, 'file_sha256', 180000),
     waitForText(page, 'Risk score', 180000),
     waitForText(page, 'Evidence hash', 180000),
+    waitForText(page, 'Risk band', 180000),
   ]);
 
   await page.screenshot({ path: path.join(ARTIFACTS, '03-risk-result.png'), fullPage: true });
