@@ -38,8 +38,8 @@ async function clickByText(page, text) {
 
   console.log('[demo] looking for upload input');
   const fileInput = page.locator('input[type="file"]').first();
-  await fileInput.waitFor({ timeout: 30000 });
-  await fileInput.setInputFiles(UPLOAD_FILE);
+  await fileInput.waitFor({ state: 'attached', timeout: 30000 });
+  await fileInput.setInputFiles(UPLOAD_FILE, { timeout: 30000 });
 
   await page.screenshot({ path: path.join(ARTIFACTS, '02-file-uploaded.png'), fullPage: true });
 
