@@ -131,10 +131,24 @@ async function clickByText(page, text) {
     throw new Error('No explorer URL or transaction hash detected; refusing to open explorer.');
   }
 
-  console.log(`[demo] opening explorer ${explorerUrl}`);
+  console.log(`[demo] opening CSPR.live search for tx ${summary.detected_tx_hash}`);
+
   const explorer = await context.newPage();
-  await explorer.goto(explorerUrl, { waitUntil: 'domcontentloaded', timeout: 90000 });
-  await explorer.waitForTimeout(12000);
+  await explorer.goto('https://testnet.cspr.live/', { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await explorer.waitForTimeout(5000);
+
+  // Handle cookie banner if present.
+  const accept = explorer.getByText('Accept', { exact: false }).first();
+  if (await accept.count().catch(() => 0)) {
+    try { await accept.click({ timeout: 3000 }); } catch (_) {}
+  }
+
+  const searchBox = explorer.locator('input[placeholder*="Search"], input[type="text"]').first();
+  await searchBox.waitFor({ state: 'visible', timeout: 30000 });
+  await searchBox.fill(summary.detected_tx_hash);
+  await explorer.keyboard.press('Enter');
+
+  await explorer.waitForTimeout(15000);
   await explorer.screenshot({ path: path.join(ARTIFACTS, '05-explorer.png'), fullPage: true });
 
   await page.waitForTimeout(3000);
