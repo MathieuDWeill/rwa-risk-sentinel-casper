@@ -1,0 +1,17 @@
+{
+  "asset_id": "real-estate-note-nyc-17",
+  "asset_type": "real_estate_note",
+  "payment_delay_days": 15,
+  "debtor_credit_score": 610,
+  "macro_volatility_bps": 560,
+  "collateral_price_change_bps": -670,
+  "negative_news_count": 2,
+  "registry_status": "active",
+  "source_count": 6,
+  "timestamp_ms": 0,
+  "raw": {
+    "ltv_bps": 7600,
+    "region": "NYC",
+    "sources": ["property_index", "payment_servicer", "credit_model", "news", "rates", "registry"]
+  }
+}

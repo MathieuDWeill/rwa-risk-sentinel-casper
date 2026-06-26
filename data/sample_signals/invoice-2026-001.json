@@ -1,0 +1,18 @@
+{
+  "asset_id": "invoice-2026-001",
+  "asset_type": "tokenized_invoice",
+  "payment_delay_days": 7,
+  "debtor_credit_score": 665,
+  "macro_volatility_bps": 420,
+  "collateral_price_change_bps": -230,
+  "negative_news_count": 1,
+  "registry_status": "active",
+  "source_count": 5,
+  "timestamp_ms": 0,
+  "raw": {
+    "invoice_amount_usd": 48000,
+    "debtor_region": "EU",
+    "maturity_date": "2026-07-20",
+    "sources": ["invoice_api", "credit_model", "market_volatility", "news_monitor", "registry"]
+  }
+}

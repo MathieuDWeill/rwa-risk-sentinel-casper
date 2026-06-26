@@ -1,0 +1,11 @@
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./agent/.env
+    volumes:
+      - ./evidence:/app/evidence

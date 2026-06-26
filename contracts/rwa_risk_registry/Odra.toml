@@ -1,0 +1,3 @@
+[[contracts]]
+name = "RwaRiskRegistry"
+fqn = "rwa_risk_registry::RwaRiskRegistry"

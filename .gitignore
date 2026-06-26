@@ -1,0 +1,31 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node / Next
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Rust / Casper build
+target/
+contracts/rwa_risk_registry/target/
+
+# Generated demo evidence
+evidence/
+
+# Secrets / local env
+.env
+*.env
+agent/.env
+*.pem
+*.key
+*.secret
+
+# OS
+.DS_Store
+
+# Local Casper keys
+keys/

@@ -1,0 +1,171 @@
+{
+  "casper_contract_schema_version": 1,
+  "toolchain": "rustc 1.83.0-nightly (4ac7bcbaa 2024-09-04)",
+  "authors": [],
+  "repository": null,
+  "homepage": null,
+  "contract_name": "RwaRiskRegistry",
+  "contract_version": "0.1.0",
+  "types": [
+    {
+      "struct": {
+        "name": "RiskAttestation",
+        "description": null,
+        "members": [
+          {
+            "name": "asset_id",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "score_bps",
+            "description": null,
+            "ty": "U32"
+          },
+          {
+            "name": "confidence_bps",
+            "description": null,
+            "ty": "U32"
+          },
+          {
+            "name": "evidence_hash",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "summary",
+            "description": null,
+            "ty": "String"
+          },
+          {
+            "name": "timestamp_ms",
+            "description": null,
+            "ty": "U64"
+          },
+          {
+            "name": "publisher",
+            "description": null,
+            "ty": "Key"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [],
+  "entry_points": [
+    {
+      "name": "publish_attestation",
+      "description": "",
+      "is_mutable": true,
+      "arguments": [
+        {
+          "name": "asset_id",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        },
+        {
+          "name": "score_bps",
+          "description": null,
+          "ty": "U32",
+          "optional": false
+        },
+        {
+          "name": "confidence_bps",
+          "description": null,
+          "ty": "U32",
+          "optional": false
+        },
+        {
+          "name": "evidence_hash",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        },
+        {
+          "name": "summary",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        },
+        {
+          "name": "timestamp_ms",
+          "description": null,
+          "ty": "U64",
+          "optional": false
+        }
+      ],
+      "return_ty": "Unit",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "latest",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "asset_id",
+          "description": null,
+          "ty": "String",
+          "optional": false
+        }
+      ],
+      "return_ty": {
+        "Option": "RiskAttestation"
+      },
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "publisher_reputation",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [
+        {
+          "name": "publisher",
+          "description": null,
+          "ty": "Key",
+          "optional": false
+        }
+      ],
+      "return_ty": "U64",
+      "is_contract_context": true,
+      "access": "public"
+    },
+    {
+      "name": "total_assets",
+      "description": "",
+      "is_mutable": false,
+      "arguments": [],
+      "return_ty": "U64",
+      "is_contract_context": true,
+      "access": "public"
+    }
+  ],
+  "events": [],
+  "call": {
+    "wasm_file_name": "RwaRiskRegistry.wasm",
+    "description": "",
+    "arguments": [
+      {
+        "name": "odra_cfg_package_hash_key_name",
+        "description": "The arg name for the package hash key name.",
+        "ty": "String",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_allow_key_override",
+        "description": "If true and the key specified in odra_cfg_package_hash_key_name already exists, it will be overwritten.",
+        "ty": "Bool",
+        "optional": false
+      },
+      {
+        "name": "odra_cfg_is_upgradable",
+        "description": "The arg name for the contract upgradeability setting.",
+        "ty": "Bool",
+        "optional": false
+      }
+    ]
+  }
+}

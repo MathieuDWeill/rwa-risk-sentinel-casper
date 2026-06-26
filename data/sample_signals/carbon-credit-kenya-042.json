@@ -1,0 +1,18 @@
+{
+  "asset_id": "carbon-credit-kenya-042",
+  "asset_type": "carbon_credit_forward",
+  "payment_delay_days": 0,
+  "debtor_credit_score": 735,
+  "macro_volatility_bps": 180,
+  "collateral_price_change_bps": -120,
+  "negative_news_count": 0,
+  "registry_status": "active",
+  "source_count": 4,
+  "timestamp_ms": 0,
+  "raw": {
+    "project": "reforestation",
+    "vintage": 2026,
+    "registry": "demo-registry",
+    "sources": ["registry", "weather", "market", "satellite_stub"]
+  }
+}
