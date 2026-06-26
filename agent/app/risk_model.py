@@ -59,7 +59,11 @@ def risk_band(score_bps: int) -> RiskBand:
     return RiskBand.LOW
 
 
-def score_signals(signals: AssetSignals) -> RiskReport:
+def score_signals(
+    signals: AssetSignals,
+    file_sha256: str | None = None,
+    original_filename: str | None = None,
+) -> RiskReport:
     reasons: list[str] = []
     score = 500
 
@@ -111,6 +115,11 @@ def score_signals(signals: AssetSignals) -> RiskReport:
             "reasons": reasons,
         },
     }
+    if file_sha256 is not None:
+        evidence["file_sha256"] = file_sha256
+    if original_filename is not None:
+        evidence["original_filename"] = original_filename
+
     evidence_hash = canonical_hash(evidence)
     summary = f"{band.value} risk for {signals.asset_id}: score {score_bps / 100:.2f}%, confidence {confidence_bps / 100:.2f}%."
 

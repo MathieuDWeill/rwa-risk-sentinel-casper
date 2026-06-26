@@ -39,3 +39,4 @@ agent/.env.bak
 
 # Vendored docs / local mirrors
 docs/vendor/
+uploads/

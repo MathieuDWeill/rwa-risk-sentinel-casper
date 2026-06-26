@@ -508,6 +508,104 @@ with col2:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
+st.markdown('<div class="lab-panel panel-yellow"><div class="panel-title">▣ Upload & Analyze RWA Document</div>', unsafe_allow_html=True)
+
+# File uploader widget
+uploaded_file = st.file_uploader(
+    "Drag and drop your RWA contract, invoice, or signal file here (JSON, CSV, TXT, PDF)",
+    type=["json", "csv", "txt", "pdf"],
+    key="rwa_uploader",
+)
+
+if uploaded_file is not None:
+    # Read file content
+    file_bytes = uploaded_file.getvalue()
+    
+    should_publish_upload = st.checkbox("Submit attestation to Casper Testnet upon assessment", value=True)
+    
+    if st.button("Assess RWA Document", type="primary", key="btn_assess_upload"):
+        with st.spinner("Processing document and running risk agent..."):
+            try:
+                # Call our FastAPI backend endpoint /uploads/assess
+                files = {"file": (uploaded_file.name, file_bytes, uploaded_file.type or "application/octet-stream")}
+                response = requests.post(
+                    f"{API_BASE}/uploads/assess?should_publish={str(should_publish_upload).lower()}",
+                    files=files,
+                    timeout=180,
+                )
+                if response.status_code >= 400:
+                    st.error(f"Error from agent server: {response.text}")
+                else:
+                    st.session_state["upload_result"] = response.json()
+            except Exception as e:
+                st.error(f"Failed to communicate with risk agent: {e}")
+                
+    if "upload_result" in st.session_state:
+        res = st.session_state["upload_result"]
+        report = res.get("report", {})
+        casper = res.get("casper", {})
+        
+        st.markdown("---")
+        
+        col_up1, col_up2 = st.columns([1, 1])
+        
+        with col_up1:
+            st.markdown("### 1. Cryptographic Verification")
+            st.markdown(f"**Original Filename**: `{res.get('original_filename')}`")
+            st.markdown("**SHA-256 Document Hash**:")
+            st.code(res.get("file_sha256"), language="text")
+            
+            st.markdown("### 2. Document Risk Profiling")
+            m_up1, m_up2, m_up3 = st.columns(3)
+            m_up1.metric("Risk Score", f"{report.get('score_bps', 0) / 100:.2f}%")
+            m_up2.metric("Confidence", f"{report.get('confidence_bps', 0) / 100:.2f}%")
+            m_up3.metric("Risk Band", report.get("band"))
+            
+            if report.get("band") == "HIGH" or report.get("band") == "CRITICAL":
+                st.markdown('<span class="badge badge-red">High / Critical Risk</span>', unsafe_allow_html=True)
+            elif report.get("band") == "MEDIUM":
+                st.markdown('<span class="badge badge-yellow">Medium Risk</span>', unsafe_allow_html=True)
+            else:
+                st.markdown('<span class="badge badge-green">Low Risk</span>', unsafe_allow_html=True)
+                
+            st.markdown("#### Decision Factors")
+            for reason in report.get("reasons", []):
+                st.write(f"✓ {reason}")
+                
+        with col_up2:
+            st.markdown("### 3. Casper Attestation Status")
+            real_success = (
+                casper.get("mode") == "testnet"
+                and casper.get("dry_run") is False
+                and casper.get("submitted") is True
+            )
+            
+            if real_success:
+                st.markdown('<span class="badge badge-green">On-Chain Proof Registered</span>', unsafe_allow_html=True)
+            else:
+                st.markdown('<span class="badge badge-yellow">Dry-Run / Off-Chain Attestation</span>', unsafe_allow_html=True)
+                
+            st.markdown(f"**Mode**: `{casper.get('mode')}`")
+            
+            st.markdown("**Transaction Hash**:")
+            st.code(casper.get("transaction_hash") or casper.get("deploy_hash") or "N/A", language="text")
+            
+            st.markdown("**Contract Hash**:")
+            st.code(casper.get("contract_hash") or "N/A", language="text")
+            
+            explorer_url = casper.get("explorer_url")
+            if explorer_url:
+                st.link_button("Open Casper Explorer", explorer_url, use_container_width=True, key="btn_explorer_upload")
+                
+            st.markdown("**Evidence Hash**:")
+            st.code(report.get("evidence_hash"), language="text")
+            
+            with st.expander("Full Upload Assessment Response"):
+                st.json(res)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+
 st.markdown(
     """
 <div class="lab-panel panel-yellow">
