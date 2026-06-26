@@ -92,18 +92,21 @@ async function clickByText(page, text) {
 
   let txHash = null;
 
-  const txLabelMatch = pageText.match(/Transaction Hash:\\s*([a-f0-9]{64})/i);
+  // Streamlit body text usually contains:
+  // Transaction Hash:
+  // <64-char hash>
+  const txLabelMatch = pageText.match(/Transaction Hash:\s*\n?\s*([a-f0-9]{64})/i);
   if (txLabelMatch) {
     txHash = txLabelMatch[1];
   }
 
+  // Fallback: remove the document SHA-256 and pick another 64-char hash.
   if (!txHash) {
+    const documentHashMatch = pageText.match(/SHA-256 Document Hash:\s*\n?\s*([a-f0-9]{64})/i);
+    const documentHash = documentHashMatch ? documentHashMatch[1] : null;
+
     const hashes = [...pageText.matchAll(/[a-f0-9]{64}/gi)].map((m) => m[0]);
     const uniqueHashes = [...new Set(hashes)];
-
-    // Avoid picking the document SHA-256 shown under Cryptographic Verification.
-    const documentHashMatch = pageText.match(/SHA-256 Document Hash:\\s*([a-f0-9]{64})/i);
-    const documentHash = documentHashMatch ? documentHashMatch[1] : null;
 
     txHash = uniqueHashes.find((h) => h !== documentHash) || null;
   }
