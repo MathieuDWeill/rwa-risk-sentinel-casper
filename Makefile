@@ -40,4 +40,4 @@ streamlit:
 
 record-streamlit-demo:
 	cd frontend && npm install
-	node scripts/record_streamlit_demo.js
+	NODE_PATH=frontend/node_modules node scripts/record_streamlit_demo.js
