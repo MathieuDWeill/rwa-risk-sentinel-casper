@@ -1,0 +1,11 @@
+{
+  "asset_id": "uploaded-invoice-demo-001",
+  "asset_type": "invoice",
+  "payment_delay_days": 18,
+  "debtor_credit_score": 552,
+  "macro_volatility_bps": 510,
+  "collateral_price_change_bps": -430,
+  "negative_news_count": 3,
+  "registry_status": "active",
+  "source_count": 4
+}

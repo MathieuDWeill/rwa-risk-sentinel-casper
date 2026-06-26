@@ -36,3 +36,8 @@ clean:
 
 streamlit:
 	source .venv/bin/activate && streamlit run streamlit_app.py --server.port 8501
+
+
+record-streamlit-demo:
+	cd frontend && npm install
+	node ../scripts/record_streamlit_demo.js

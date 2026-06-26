@@ -40,3 +40,6 @@ agent/.env.bak
 # Vendored docs / local mirrors
 docs/vendor/
 uploads/
+
+# Demo recording artifacts
+demo_artifacts/
