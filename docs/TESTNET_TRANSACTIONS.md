@@ -30,9 +30,7 @@ To produce real Casper Testnet transactions:
 
 Once you run the steps above, record the hashes below for your DoraHacks submission page:
 
-| Purpose | Deploy Hash | Explorer Link | Notes |
+| Purpose | Hash | Explorer Link | Notes |
 |---|---|---|---|
-| Contract Deploy | `[Your Contract Deploy Hash]` | `https://testnet.cspr.live/deploy/[Hash]` | RWA Risk Registry |
-| Attestation 1 | `[Your Attestation Hash 1]` | `https://testnet.cspr.live/deploy/[Hash]` | `invoice-2026-001` |
-| Attestation 2 | `[Your Attestation Hash 2]` | `https://testnet.cspr.live/deploy/[Hash]` | `carbon-credit-kenya-042` |
-| Attestation 3 | `[Your Attestation Hash 3]` | `https://testnet.cspr.live/deploy/[Hash]` | `real-estate-note-nyc-17` |
+| RWA Risk Registry Contract | `hash-725268e37535a1bca175840693f9b59ea7dd2accbcbd104577145f82576609d5` | `https://testnet.cspr.live/` | Casper Testnet contract hash |
+| Attestation 1 | `7f6848d02c5bf1f14618c389c3340efc4026f8328f2b35a875a3eb9f33df7851` | `https://testnet.cspr.live/deploy/7f6848d02c5bf1f14618c389c3340efc4026f8328f2b35a875a3eb9f33df7851` | `invoice-2026-001`, HIGH risk, evidence hash `sha256:bfa0d8a3fc5b61b5374c1012a7a1025efef192db07288e6d648d889c9af13b1c` |

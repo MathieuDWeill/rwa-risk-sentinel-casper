@@ -29,3 +29,7 @@ agent/.env
 
 # Local Casper keys
 keys/
+
+# Local env backups
+*.env.bak
+agent/.env.bak

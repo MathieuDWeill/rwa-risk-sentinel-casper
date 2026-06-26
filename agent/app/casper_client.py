@@ -124,7 +124,11 @@ class RealCasperPublisher:
             tx_hash = None
             try:
                 out_data = json.loads(result.stdout)
-                tx_hash = out_data.get("transaction_hash") or out_data.get("result", {}).get("transaction_hash")
+                raw_hash = out_data.get("transaction_hash") or out_data.get("result", {}).get("transaction_hash")
+                if isinstance(raw_hash, dict):
+                    tx_hash = raw_hash.get("Version1") or list(raw_hash.values())[0]
+                else:
+                    tx_hash = raw_hash
             except json.JSONDecodeError:
                 for line in result.stdout.splitlines():
                     if "transaction_hash" in line or "deploy_hash" in line:

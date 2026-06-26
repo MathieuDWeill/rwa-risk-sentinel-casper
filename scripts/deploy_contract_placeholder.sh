@@ -20,13 +20,15 @@ PUBLIC_KEY_HEX=$(cat "$(dirname "$SECRET_KEY")/public_key_hex")
 echo "Using deployer public key: $PUBLIC_KEY_HEX"
 
 # Compile contract
-echo "Compiling rwa_risk_registry contract using cargo odra..."
+echo "Compiling rwa_risk_registry contract..."
 source ~/.cargo/env
 cd contracts/rwa_risk_registry
-cargo +nightly-2024-09-05 odra build
+export RUSTUP_TOOLCHAIN=nightly-2024-09-05-aarch64-apple-darwin
+cargo clean
+cargo build --release --target wasm32-unknown-unknown
 cd ../..
 
-WASM_PATH="contracts/rwa_risk_registry/wasm/RwaRiskRegistry.wasm"
+WASM_PATH="contracts/rwa_risk_registry/target/wasm32-unknown-unknown/release/rwa_risk_registry.wasm"
 if [ ! -f "$WASM_PATH" ]; then
     echo "ERROR: Compiled WASM not found at $WASM_PATH"
     exit 1
@@ -41,10 +43,8 @@ TX_JSON=$(~/.cargo/bin/casper-client put-transaction session \
   --secret-key "$SECRET_KEY" \
   --payment-amount "$PAYMENT_AMOUNT" \
   --standard-payment true \
-  --session-arg "odra_cfg_package_hash_key_name:string='rwa_risk_registry'" \
-  --session-arg "odra_cfg_allow_key_override:bool='true'" \
-  --session-arg "odra_cfg_is_upgradable:bool='false'" \
   --node-address "$NODE_ADDRESS" \
+  --install-upgrade \
   -vv)
 
 # Extract transaction hash
@@ -67,9 +67,9 @@ echo "Explorer Link: https://testnet.cspr.live/deploy/$TX_HASH"
 echo "Waiting for transaction to execute (this typically takes 1-2 minutes on Casper Testnet)..."
 # We will poll get-transaction until execution status is success
 for i in {1..30}; do
-    STATUS_JSON=$(~/.cargo/bin/casper-client get-transaction --transaction-hash "$TX_HASH" --node-address "$NODE_ADDRESS" -vv 2>/dev/null || true)
-    if echo "$STATUS_JSON" | grep -q '"ExecutionResult"'; then
-        if echo "$STATUS_JSON" | grep -q '"Success"'; then
+    STATUS_JSON=$(~/.cargo/bin/casper-client get-transaction "$TX_HASH" --node-address "$NODE_ADDRESS" -vv 2>/dev/null || true)
+    if echo "$STATUS_JSON" | grep -qi '"execution_result"'; then
+        if echo "$STATUS_JSON" | grep -qi '"Success"'; then
             echo "Transaction executed successfully!"
             break
         else
@@ -82,13 +82,16 @@ for i in {1..30}; do
 done
 
 echo "Querying account named keys to find the contract hash..."
-ACCOUNT_JSON=$(~/.cargo/bin/casper-client get-account --account-identifier "$PUBLIC_KEY_HEX" --node-address "$NODE_ADDRESS" -vv || true)
+ACCOUNT_JSON=$(~/.cargo/bin/casper-client get-account --account-identifier "$PUBLIC_KEY_HEX" --node-address "$NODE_ADDRESS" -vv 2>/dev/null || true)
 
-# Grep for rwa_risk_registry key
-CONTRACT_HASH=$(echo "$ACCOUNT_JSON" | grep -A 2 -E '"name": "rwa_risk_registry"' | grep -oE '"hash-[a-fA-F0-9]{64}"' | head -n1 | tr -d '"' || true)
-if [ -z "$CONTRACT_HASH" ]; then
-    # Try alternate search
-    CONTRACT_HASH=$(echo "$ACCOUNT_JSON" | grep -oE 'hash-[a-fA-F0-9]{64}' | head -n1 || true)
+CONTRACT_HASH=""
+if [ -n "$ACCOUNT_JSON" ]; then
+    # Grep for rwa_risk_registry key
+    CONTRACT_HASH=$(echo "$ACCOUNT_JSON" | grep -A 2 -E '"name": "rwa_risk_registry"' | grep -oE '"hash-[a-fA-F0-9]{64}"' | head -n1 | tr -d '"' || true)
+    if [ -z "$CONTRACT_HASH" ]; then
+        # Try alternate search
+        CONTRACT_HASH=$(echo "$ACCOUNT_JSON" | grep -oE 'hash-[a-fA-F0-9]{64}' | head -n1 || true)
+    fi
 fi
 
 if [ -z "$CONTRACT_HASH" ]; then
