@@ -1,7 +1,34 @@
+import os
+import sys
+import hashlib
+import json
+from pathlib import Path
 import requests
 import streamlit as st
 
-API_BASE = "http://127.0.0.1:8080"
+# Add project root to sys.path to ensure agent modules are importable
+project_root = os.path.dirname(os.path.abspath(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+try:
+    from agent.app.risk_model import fetch_asset_signals, score_signals, now_ms
+    from agent.app.models import AssetSignals
+except ImportError:
+    pass
+
+API_BASE = os.getenv("FASTAPI_URL", "http://127.0.0.1:8080")
+
+hosted_demo_mode = False
+assets = ["invoice-2026-001", "carbon-credit-kenya-042", "real-estate-note-nyc-17"]
+
+try:
+    assets_resp = requests.get(f"{API_BASE}/assets", timeout=2)
+    assets_resp.raise_for_status()
+    assets = assets_resp.json().get("assets", assets)
+except Exception:
+    hosted_demo_mode = True
+
 
 st.set_page_config(
     page_title="RWA Intelligence Lab",
@@ -329,17 +356,30 @@ with st.sidebar:
     )
 
     st.markdown("### SYSTEM STATUS")
-    st.markdown('<span class="badge badge-green">Decision system online</span>', unsafe_allow_html=True)
+    if hosted_demo_mode:
+        st.markdown('<span class="badge badge-yellow">Hosted Demo Mode</span>', unsafe_allow_html=True)
+    else:
+        st.markdown('<span class="badge badge-green">Decision system online</span>', unsafe_allow_html=True)
 
     st.markdown("### CASPER TESTNET")
-    st.markdown(
-        '<div class="sidebar-proof-label">CONTRACT</div>'
-        '<div class="sidebar-proof-value">725268e3…676609d5</div>'
-        '<div class="sidebar-proof-label">LATEST TX</div>'
-        '<div class="sidebar-proof-value">7f6848d0…33df7851</div>'
-        '<a class="side-link" href="https://testnet.cspr.live/deploy/7f6848d02c5bf1f14618c389c3340efc4026f8328f2b35a875a3eb9f33df7851" target="_blank">Open explorer</a>',
-        unsafe_allow_html=True,
-    )
+    if hosted_demo_mode:
+        st.markdown(
+            '<div class="sidebar-proof-label">CONTRACT</div>'
+            '<div class="sidebar-proof-value">725268e3…676609d5</div>'
+            '<div class="sidebar-proof-label">VERIFIED TX</div>'
+            '<div class="sidebar-proof-value">458a6307…4e4c1049</div>'
+            '<a class="side-link" href="https://testnet.cspr.live/deploy/458a630791bf33d110cfd572b887c308e62c5d434610e507e1fe6b324e4c1049" target="_blank">Open explorer</a>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div class="sidebar-proof-label">CONTRACT</div>'
+            '<div class="sidebar-proof-value">725268e3…676609d5</div>'
+            '<div class="sidebar-proof-label">LATEST TX</div>'
+            '<div class="sidebar-proof-value">7f6848d0…33df7851</div>'
+            '<a class="side-link" href="https://testnet.cspr.live/deploy/7f6848d02c5bf1f14618c389c3340efc4026f8328f2b35a875a3eb9f33df7851" target="_blank">Open explorer</a>',
+            unsafe_allow_html=True,
+        )
 
 st.markdown(
     """
@@ -361,13 +401,18 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+agent_mode_val = "Demo Mode" if hosted_demo_mode else "On-chain"
+agent_mode_note = "Local fallback evaluation" if hosted_demo_mode else "Casper Testnet publishing"
+casper_proof_val = "Verified" if hosted_demo_mode else "Live"
+casper_proof_note = "Using historical proof" if hosted_demo_mode else "Transaction-producing component"
+
 st.markdown(
-    """
+    f"""
 <div class="metric-row">
   <div class="metric-card">
     <div class="metric-label">Agent Mode</div>
-    <div class="metric-value">On-chain</div>
-    <div class="metric-note">Casper Testnet publishing</div>
+    <div class="metric-value">{agent_mode_val}</div>
+    <div class="metric-note">{agent_mode_note}</div>
   </div>
   <div class="metric-card yellow">
     <div class="metric-label">Asset Class</div>
@@ -381,8 +426,8 @@ st.markdown(
   </div>
   <div class="metric-card">
     <div class="metric-label">Casper Proof</div>
-    <div class="metric-value">Live</div>
-    <div class="metric-note">Transaction-producing component</div>
+    <div class="metric-value">{casper_proof_val}</div>
+    <div class="metric-note">{casper_proof_note}</div>
   </div>
 </div>
 """,
@@ -401,13 +446,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-try:
-    assets_resp = requests.get(f"{API_BASE}/assets", timeout=5)
-    assets_resp.raise_for_status()
-    assets = assets_resp.json().get("assets", [])
-except Exception as exc:
-    st.error(f"Could not reach FastAPI agent at {API_BASE}: {exc}")
-    st.stop()
+
 
 st.markdown('<div class="lab-panel panel-red"><div class="panel-title">RWA Decision Console</div>', unsafe_allow_html=True)
 
@@ -423,10 +462,19 @@ with col1:
     )
 
     if st.button("Preview assessment", use_container_width=True):
-        with st.spinner("Evaluating RWA signals..."):
-            preview_resp = requests.get(f"{API_BASE}/assets/{asset_id}/preview", timeout=20)
-            preview_resp.raise_for_status()
-            st.session_state["preview"] = preview_resp.json()
+        if hosted_demo_mode:
+            with st.spinner("Evaluating RWA signals (hosted)..."):
+                try:
+                    signals = fetch_asset_signals(asset_id)
+                    report = score_signals(signals)
+                    st.session_state["preview"] = report.model_dump()
+                except Exception as e:
+                    st.error(f"Error in hosted assessment logic: {e}")
+        else:
+            with st.spinner("Evaluating RWA signals..."):
+                preview_resp = requests.get(f"{API_BASE}/assets/{asset_id}/preview", timeout=20)
+                preview_resp.raise_for_status()
+                st.session_state["preview"] = preview_resp.json()
 
     if "preview" in st.session_state:
         preview = st.session_state["preview"]
@@ -458,16 +506,49 @@ with col2:
     )
 
     if st.button("Run agent + publish on Casper Testnet", type="primary", use_container_width=True):
-        with st.spinner("Submitting attestation to Casper Testnet..."):
-            run_resp = requests.post(
-                f"{API_BASE}/agent/run",
-                json={"asset_id": asset_id},
-                timeout=180,
-            )
-            if run_resp.status_code >= 400:
-                st.error(run_resp.text)
-                st.stop()
-            st.session_state["result"] = run_resp.json()
+        if hosted_demo_mode:
+            with st.spinner("Submitting attestation (hosted)..."):
+                try:
+                    signals = fetch_asset_signals(asset_id)
+                    report = score_signals(signals)
+                    mock_tx = {
+                        "mode": "hosted-demo",
+                        "dry_run": True,
+                        "submitted": False,
+                        "verified_example": True,
+                        "deploy_hash": "458a630791bf33d110cfd572b887c308e62c5d434610e507e1fe6b324e4c1049",
+                        "transaction_hash": "458a630791bf33d110cfd572b887c308e62c5d434610e507e1fe6b324e4c1049",
+                        "explorer_url": "https://testnet.cspr.live/deploy/458a630791bf33d110cfd572b887c308e62c5d434610e507e1fe6b324e4c1049",
+                        "contract_hash": "725268e3650630b91e9a3b603d6d03ca4d2e85a6ba273a5a415a7702676609d5",
+                        "package_hash": "725268e3650630b91e9a3b603d6d03ca4d2e85a6ba273a5a415a7702676609d5",
+                    }
+                    st.session_state["result"] = {
+                        "report": report.model_dump(),
+                        "evidence_path": "n/a (hosted-demo)",
+                        "casper": mock_tx,
+                        "mode": mock_tx.get("mode"),
+                        "dry_run": mock_tx.get("dry_run"),
+                        "submitted": mock_tx.get("submitted"),
+                        "verified_example": mock_tx.get("verified_example"),
+                        "deploy_hash": mock_tx.get("deploy_hash"),
+                        "transaction_hash": mock_tx.get("transaction_hash"),
+                        "explorer_url": mock_tx.get("explorer_url"),
+                        "contract_hash": mock_tx.get("contract_hash"),
+                        "package_hash": mock_tx.get("package_hash"),
+                    }
+                except Exception as e:
+                    st.error(f"Error in hosted publishing logic: {e}")
+        else:
+            with st.spinner("Submitting attestation to Casper Testnet..."):
+                run_resp = requests.post(
+                    f"{API_BASE}/agent/run",
+                    json={"asset_id": asset_id},
+                    timeout=180,
+                )
+                if run_resp.status_code >= 400:
+                    st.error(run_resp.text)
+                    st.stop()
+                st.session_state["result"] = run_resp.json()
 
     if "result" in st.session_state:
         result = st.session_state["result"]
@@ -479,7 +560,10 @@ with col2:
             and casper.get("submitted") is True
         )
 
-        if real_success:
+        if casper.get("mode") == "hosted-demo":
+            st.markdown('<span class="badge badge-yellow">ON-CHAIN PROOF EXAMPLE</span>', unsafe_allow_html=True)
+            st.info("Hosted demo mode uses a previously verified Casper Testnet attestation. Run locally with FastAPI enabled to submit fresh attestations.")
+        elif real_success:
             st.markdown('<span class="badge badge-green">Real Casper transaction submitted</span>', unsafe_allow_html=True)
         else:
             st.markdown('<span class="badge badge-red">Not a real Testnet submission</span>', unsafe_allow_html=True)
@@ -525,20 +609,100 @@ if uploaded_file is not None:
     
     if st.button("Assess RWA Document", type="primary", key="btn_assess_upload"):
         with st.spinner("Processing document and running risk agent..."):
-            try:
-                # Call our FastAPI backend endpoint /uploads/assess
-                files = {"file": (uploaded_file.name, file_bytes, uploaded_file.type or "application/octet-stream")}
-                response = requests.post(
-                    f"{API_BASE}/uploads/assess?should_publish={str(should_publish_upload).lower()}",
-                    files=files,
-                    timeout=180,
-                )
-                if response.status_code >= 400:
-                    st.error(f"Error from agent server: {response.text}")
-                else:
-                    st.session_state["upload_result"] = response.json()
-            except Exception as e:
-                st.error(f"Failed to communicate with risk agent: {e}")
+            if hosted_demo_mode:
+                try:
+                    # Compute sha256 of raw file content
+                    file_sha256 = hashlib.sha256(file_bytes).hexdigest()
+                    
+                    # Parse or generate signals
+                    is_json = False
+                    parsed_data = {}
+                    if uploaded_file.name.endswith(".json"):
+                        try:
+                            parsed_data = json.loads(file_bytes.decode("utf-8"))
+                            is_json = True
+                        except Exception:
+                            pass
+
+                    if is_json:
+                        asset_id = parsed_data.get("asset_id") or Path(uploaded_file.name).stem
+                        signals = AssetSignals(
+                            asset_id=asset_id,
+                            asset_type=parsed_data.get("asset_type", "invoice"),
+                            payment_delay_days=int(parsed_data.get("payment_delay_days", 0)),
+                            debtor_credit_score=int(parsed_data.get("debtor_credit_score", 700)),
+                            macro_volatility_bps=int(parsed_data.get("macro_volatility_bps", 100)),
+                            collateral_price_change_bps=int(parsed_data.get("collateral_price_change_bps", 0)),
+                            negative_news_count=int(parsed_data.get("negative_news_count", 0)),
+                            registry_status=parsed_data.get("registry_status", "active"),
+                            source_count=int(parsed_data.get("source_count", 3)),
+                            timestamp_ms=now_ms(),
+                            raw={"parsed_from_json": True, "original_filename": uploaded_file.name}
+                        )
+                    else:
+                        asset_id = Path(uploaded_file.name).stem
+                        seed = int(file_sha256[:8], 16)
+                        signals = AssetSignals(
+                            asset_id=asset_id,
+                            asset_type="invoice",
+                            payment_delay_days=seed % 30,
+                            debtor_credit_score=500 + (seed % 220),
+                            macro_volatility_bps=80 + (seed % 400),
+                            collateral_price_change_bps=-(seed % 900),
+                            negative_news_count=seed % 5,
+                            registry_status="active" if (seed % 2 == 0) else "suspended",
+                            source_count=3 + (seed % 3),
+                            timestamp_ms=now_ms(),
+                            raw={"synthetic_from_hash": True, "seed": seed, "original_filename": uploaded_file.name}
+                        )
+
+                    # Score signals
+                    report = score_signals(signals, file_sha256=file_sha256, original_filename=uploaded_file.name)
+
+                    # Casper Mock/Demo response for hosted-demo
+                    mock_tx = {
+                        "mode": "hosted-demo",
+                        "dry_run": not should_publish_upload,
+                        "submitted": should_publish_upload,
+                        "deploy_hash": "458a630791bf33d110cfd572b887c308e62c5d434610e507e1fe6b324e4c1049",
+                        "transaction_hash": "458a630791bf33d110cfd572b887c308e62c5d434610e507e1fe6b324e4c1049",
+                        "explorer_url": "https://testnet.cspr.live/deploy/458a630791bf33d110cfd572b887c308e62c5d434610e507e1fe6b324e4c1049",
+                        "contract_hash": "725268e3650630b91e9a3b603d6d03ca4d2e85a6ba273a5a415a7702676609d5",
+                        "package_hash": "725268e3650630b91e9a3b603d6d03ca4d2e85a6ba273a5a415a7702676609d5",
+                    }
+                    st.session_state["upload_result"] = {
+                        "report": report.model_dump(),
+                        "evidence_path": "n/a (hosted-demo)",
+                        "casper": mock_tx,
+                        "mode": mock_tx.get("mode"),
+                        "dry_run": mock_tx.get("dry_run"),
+                        "submitted": mock_tx.get("submitted"),
+                        "verified_example": mock_tx.get("verified_example"),
+                        "deploy_hash": mock_tx.get("deploy_hash"),
+                        "transaction_hash": mock_tx.get("transaction_hash"),
+                        "explorer_url": mock_tx.get("explorer_url"),
+                        "contract_hash": mock_tx.get("contract_hash"),
+                        "package_hash": mock_tx.get("package_hash"),
+                        "file_sha256": file_sha256,
+                        "original_filename": uploaded_file.name
+                    }
+                except Exception as e:
+                    st.error(f"Failed to process document locally: {e}")
+            else:
+                try:
+                    # Call our FastAPI backend endpoint /uploads/assess
+                    files = {"file": (uploaded_file.name, file_bytes, uploaded_file.type or "application/octet-stream")}
+                    response = requests.post(
+                        f"{API_BASE}/uploads/assess?should_publish={str(should_publish_upload).lower()}",
+                        files=files,
+                        timeout=180,
+                    )
+                    if response.status_code >= 400:
+                        st.error(f"Error from agent server: {response.text}")
+                    else:
+                        st.session_state["upload_result"] = response.json()
+                except Exception as e:
+                    st.error(f"Failed to communicate with risk agent: {e}")
                 
     if "upload_result" in st.session_state:
         res = st.session_state["upload_result"]
@@ -580,7 +744,10 @@ if uploaded_file is not None:
                 and casper.get("submitted") is True
             )
             
-            if real_success:
+            if casper.get("mode") == "hosted-demo":
+                st.markdown('<span class="badge badge-yellow">DEMO ATTESTATION READY</span>', unsafe_allow_html=True)
+                st.info("Hosted demo mode uses a previously verified Casper Testnet attestation. Run locally with FastAPI enabled to submit fresh attestations.")
+            elif real_success:
                 st.markdown('<span class="badge badge-green">On-Chain Proof Registered</span>', unsafe_allow_html=True)
             else:
                 st.markdown('<span class="badge badge-yellow">Dry-Run / Off-Chain Attestation</span>', unsafe_allow_html=True)

@@ -43,3 +43,9 @@ uploads/
 
 # Demo recording artifacts
 demo_artifacts/
+
+# Local submission/video artifacts
+demo_assets/*.mp4
+demo_assets/*.zip
+demo_assets/*.webm
+demo_assets/*.mov
