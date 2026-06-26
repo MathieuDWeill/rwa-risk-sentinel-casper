@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: install setup test agent demo frontend zip clean
+.PHONY: streamlit install setup test agent demo frontend zip clean
 
 install:
 	$(MAKE) setup
@@ -32,3 +32,7 @@ zip:
 
 clean:
 	rm -rf .venv frontend/node_modules frontend/.next contracts/rwa_risk_registry/target evidence
+
+
+streamlit:
+	source .venv/bin/activate && streamlit run streamlit_app.py --server.port 8501

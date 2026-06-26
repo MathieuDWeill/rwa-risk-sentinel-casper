@@ -33,3 +33,9 @@ keys/
 # Local env backups
 *.env.bak
 agent/.env.bak
+
+# Logs
+*.log
+
+# Vendored docs / local mirrors
+docs/vendor/
