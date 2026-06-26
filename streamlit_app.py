@@ -40,6 +40,17 @@ section[data-testid="stSidebar"] * {
   color: #f4f1e8 !important;
 }
 
+section[data-testid="stSidebar"] .hashbox,
+section[data-testid="stSidebar"] .hashbox * {
+  color: #111318 !important;
+  background: #f4f1e8 !important;
+}
+
+section[data-testid="stSidebar"] a,
+section[data-testid="stSidebar"] a * {
+  color: #111318 !important;
+}
+
 .block-container {
   padding-top: 2.2rem;
   max-width: 1320px;
@@ -260,6 +271,20 @@ div[data-testid="stMetric"] {
   text-transform: uppercase;
   margin-bottom: 30px;
 }
+
+.side-link {
+  display: block;
+  background: #f4f1e8 !important;
+  color: #111318 !important;
+  border: 2px solid #f4f1e8;
+  padding: 10px 12px;
+  text-decoration: none !important;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  margin-top: 10px;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -286,10 +311,9 @@ with st.sidebar:
     st.caption("Contract hash")
     st.code("hash-725268e37535a1bca175840693f9b59ea7dd2accbcbd104577145f82576609d5", language="text")
 
-    st.link_button(
-        "Latest attestation",
-        "https://testnet.cspr.live/deploy/7f6848d02c5bf1f14618c389c3340efc4026f8328f2b35a875a3eb9f33df7851",
-        use_container_width=True,
+    st.markdown(
+        '<a class="side-link" href="https://testnet.cspr.live/deploy/7f6848d02c5bf1f14618c389c3340efc4026f8328f2b35a875a3eb9f33df7851" target="_blank">Latest attestation</a>',
+        unsafe_allow_html=True,
     )
 
 st.markdown(
