@@ -69,12 +69,30 @@ async function clickByText(page, text) {
   await page.screenshot({ path: path.join(ARTIFACTS, '04-casper-result.png'), fullPage: true });
 
   const pageText = await page.locator('body').innerText();
-  const txMatch = pageText.match(/[a-f0-9]{64}/i);
+
   const explorerMatch = pageText.match(/https:\/\/testnet\.cspr\.live\/deploy\/[a-f0-9]{64}/i);
 
+  let txHash = null;
+
+  const txLabelMatch = pageText.match(/Transaction Hash:\\s*([a-f0-9]{64})/i);
+  if (txLabelMatch) {
+    txHash = txLabelMatch[1];
+  }
+
+  if (!txHash) {
+    const hashes = [...pageText.matchAll(/[a-f0-9]{64}/gi)].map((m) => m[0]);
+    const uniqueHashes = [...new Set(hashes)];
+
+    // Avoid picking the document SHA-256 shown under Cryptographic Verification.
+    const documentHashMatch = pageText.match(/SHA-256 Document Hash:\\s*([a-f0-9]{64})/i);
+    const documentHash = documentHashMatch ? documentHashMatch[1] : null;
+
+    txHash = uniqueHashes.find((h) => h !== documentHash) || null;
+  }
+
   const summary = {
-    detected_tx_hash: txMatch ? txMatch[0] : null,
-    detected_explorer_url: explorerMatch ? explorerMatch[0] : null,
+    detected_tx_hash: txHash,
+    detected_explorer_url: explorerMatch ? explorerMatch[0] : (txHash ? `https://testnet.cspr.live/deploy/${txHash}` : null),
     recorded_at: new Date().toISOString(),
   };
 
